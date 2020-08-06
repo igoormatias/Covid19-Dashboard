@@ -5,18 +5,20 @@ import ChartistGraph from "react-chartist";
 import withStyles from "@material-ui/core/styles/withStyles";
 import Icon from "@material-ui/core/Icon";
 // @material-ui/icons
-import Store from "@material-ui/icons/Store";
+import People from "@material-ui/icons/People";
 import Warning from "@material-ui/icons/Warning";
 import DateRange from "@material-ui/icons/DateRange";
 import LocalOffer from "@material-ui/icons/LocalOffer";
 import Update from "@material-ui/icons/Update";
 import ArrowUpward from "@material-ui/icons/ArrowUpward";
 import AccessTime from "@material-ui/icons/AccessTime";
-import Accessibility from "@material-ui/icons/Accessibility";
+import HowToReg from "@material-ui/icons/HowToReg";
+import PersonAddDisabledIcon from '@material-ui/icons/PersonAddDisabled';
+
 import BugReport from "@material-ui/icons/BugReport";
 import Code from "@material-ui/icons/Code";
 import Cloud from "@material-ui/icons/Cloud";
-import CheckIcon from '@material-ui/icons/Check';
+import CheckIcon from "@material-ui/icons/Check";
 // core components
 import GridItem from "../../components/Grid/GridItem";
 import GridContainer from "../../components/Grid/GridContainer";
@@ -25,7 +27,7 @@ import Tasks from "../../components/Tasks/Tasks";
 import CustomTabs from "../../components/CustomTabs/CustomTabs";
 import Danger from "../../components/Typography/Danger";
 import Card from "../../components/Card/Card";
-import Button from '../../components/CustomButtons/Button';
+import Button from "../../components/CustomButtons/Button";
 import CardHeader from "../../components/Card/CardHeader";
 import CardIcon from "../../components/Card/CardIcon";
 import CardBody from "../../components/Card/CardBody";
@@ -43,6 +45,8 @@ import dashboardStyle from "../../assets/jss/material-dashboard-react/views/dash
 import CustomInput from "../../components/CustomInput/CustomInput";
 import { InputLabel } from "@material-ui/core";
 import Success from "../../components/Typography/Success";
+import moment from "moment";
+import CardDash from "../../components/CardDash";
 
 interface Props {
   classes: any;
@@ -50,9 +54,23 @@ interface Props {
 
 interface State {
   value: number;
+  query: string;
   creatingMessage: boolean;
   messageSuccess: boolean;
-  messageFailed: boolean
+  messageFailed: boolean;
+  data: DataResponse[];
+  currentInfo: DataResponse;
+}
+
+interface DataResponse {
+  uid: number;
+  uf: string;
+  state: string;
+  cases: number;
+  deaths: number;
+  suspects: number;
+  refuses: number;
+  datetime: string | Date;
 }
 
 class Dashboard extends React.Component<Props, State> {
@@ -63,10 +81,34 @@ class Dashboard extends React.Component<Props, State> {
       creatingMessage: false,
       messageSuccess: true,
       messageFailed: true,
+      query: "",
+      currentInfo: {
+        uid: 0,
+        uf: "",
+        datetime: "",
+        state: "",
+        cases: 0,
+        deaths: 0,
+        suspects: 0,
+        refuses: 0,
+      },
+      data: [],
     };
     this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeIndex = this.handleChangeIndex.bind(this);
   }
+
+  componentDidMount = async () => {
+    const response = (await fetch(
+      "https://covid19-brazil-api.now.sh/api/report/v1"
+    ).then((res) => res.json())) as { data: DataResponse[] };
+    const initialState = (await fetch(
+      `https://covid19-brazil-api.now.sh/api/report/v1/brazil/uf/rj`
+    ).then((res) => res.json())) as DataResponse;
+    this.setState({ data: response.data, currentInfo: initialState });
+  };
+
   handleChange = (event: any, value: number) => {
     this.setState({ value });
   };
@@ -75,114 +117,104 @@ class Dashboard extends React.Component<Props, State> {
     this.setState({ value: index });
   };
 
+  handleSubmit = async () => {
+    const response = (await fetch(
+      `https://covid19-brazil-api.now.sh/api/report/v1/brazil/uf/${
+        this.state.query
+      }`
+    ).then((res) => res.json())) as DataResponse;
+    this.setState({ currentInfo: response });
+    console.log(response);
+  };
+
   render() {
     const { classes } = this.props;
     const { creatingMessage, messageFailed, messageSuccess } = this.state;
     return (
+      
       <div>
+        <div style={{ padding: 30 }}>
+          <h3>Pesquise pela sigla do seu estado</h3>
+          <input
+          style={{ padding: 5, borderRadius:30, height: 20 }}
+            value={this.state.query}
+            onChange={(e) => this.setState({ query: e.target.value })}
+          />
+          <Button style={{borderRadius: 50, width: 70, height: 40}}color="info" onClick={() => this.handleSubmit()}>
+            Pesquisar
+          </Button>
+   {this.state.query? <h4>Exibindo dados do estado {this.state.query}</h4> :''}
+        </div>
         <GridContainer>
           <GridItem xs={12} sm={6} md={3}>
-            <Card>
-              <CardHeader color="success" stats={true} icon={true}>
-                <CardIcon color="success">
-                  <Store />
-                </CardIcon>
-                <p className={classes.cardCategory}>Revenue</p>
-                <h3 className={classes.cardTitle}>$34,245</h3>
-              </CardHeader>
-              <CardFooter stats={true}>
-                <div className={classes.stats}>
-                  <DateRange />
-                  Last 24 Hours
-                </div>
-              </CardFooter>
-            </Card>
+            <CardDash
+              classes={classes}
+              icon={<People />}
+              title="Casos"
+              subtitle="Dados fornecidos pela api Covid Braz"
+              value={this.state.currentInfo.cases}
+              type="success"
+            />
           </GridItem>
           <GridItem xs={12} sm={6} md={3}>
-            <Card>
-              <CardHeader color="warning" stats={true} icon={true}>
-                <CardIcon color="warning">
-                  <Icon>content_copy</Icon>
-                </CardIcon>
-                <p className={classes.cardCategory}>Used Space</p>
-                <h3 className={classes.cardTitle}>
-                  49/50 <small>GB</small>
-                </h3>
-              </CardHeader>
-              <CardFooter stats={true}>
-                <div className={classes.stats}>
-                  <Danger>
-                    <Warning />
-                  </Danger>
-                  <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                    Get more space
-                  </a>
-                </div>
-              </CardFooter>
-            </Card>
+            <CardDash
+              classes={classes}
+              icon={<PersonAddDisabledIcon/>}
+              title="Mortes"
+              subtitle="Se possível, fique em casa! Deixe o egoísmo e pratique a empatia neste momento."
+              value={this.state.currentInfo.deaths}
+              type="danger"
+            />
           </GridItem>
           <GridItem xs={12} sm={6} md={3}>
-            <Card>
-              <CardHeader color="danger" stats={true} icon={true}>
-                <CardIcon color="danger">
-                  <Icon>info_outline</Icon>
-                </CardIcon>
-                <p className={classes.cardCategory}>Fixed Issues</p>
-                <h3 className={classes.cardTitle}>75</h3>
-              </CardHeader>
-              <CardFooter stats={true}>
-                <div className={classes.stats}>
-                  <LocalOffer />
-                  Tracked from Github
-                </div>
-              </CardFooter>
-            </Card>
+            <CardDash
+              classes={classes}
+              icon={<Warning/>}
+              title="Suspeitos"
+              subtitle="Se você está com sintomas de gripe, fique em casa por 14 dias e siga as orientações da OMS para o isolamento domiciliar"
+              value={this.state.currentInfo.suspects}
+              type="warning"
+            />
           </GridItem>
           <GridItem xs={12} sm={6} md={3}>
-            <Card>
-              <CardHeader color="info" stats={true} icon={true}>
-                <CardIcon color="info">
-                  <Accessibility />
-                </CardIcon>
-                <p className={classes.cardCategory}>Followers</p>
-                <h3 className={classes.cardTitle}>+245</h3>
-              </CardHeader>
-              <CardFooter stats={true}>
-                <div className={classes.stats}>
-                  <Update />
-                  Just Updated
-                </div>
-              </CardFooter>
-            </Card>
+            <CardDash
+              classes={classes}
+              icon={<HowToReg />}
+              title="Descartados"
+              subtitle="Caso notificado que não se enquadrar na definição de caso suspeito. ."
+              value={this.state.currentInfo.refuses}
+              type="info"
+            />
           </GridItem>
         </GridContainer>
         <GridContainer>
-          <GridItem xs={12} sm={12} md={4}>
+          <GridItem xs={12} sm={12} md={12}>
             <Card chart={true}>
-              <CardHeader color="success">
+              <CardHeader color="primary">
                 <ChartistGraph
                   className="ct-chart"
-                  data={dailySalesChart.data}
+                  data={{
+                    labels: this.state.data.map((item) => item.uf),
+                    series: [this.state.data.map((item) => item.deaths)],
+                  }}
                   type="Line"
                 />
               </CardHeader>
               <CardBody>
-                <h4 className={classes.cardTitle}>Daily Sales</h4>
-                <p className={classes.cardCategory}>
-                  <span className={classes.successText}>
-                    <ArrowUpward className={classes.upArrowCardCategory} /> 55%
-                  </span>{" "}
-                  increase in today sales.
-                </p>
+                <h4 className={classes.cardTitle}>
+                  Número de mortes por estado
+                </h4>
               </CardBody>
               <CardFooter chart={true}>
                 <div className={classes.stats}>
-                  <AccessTime /> updated 4 minutes ago
+                  <AccessTime /> atualizado{" "}
+                  {this.state.data.length > 0 &&
+                    moment(this.state.data[0].datetime).fromNow()}
                 </div>
               </CardFooter>
             </Card>
           </GridItem>
-          <GridItem xs={12} sm={12} md={4}>
+          {/* <GridItem xs={12} sm={12} md={4}>
             <Card chart={true}>
               <CardHeader color="warning">
                 <ChartistGraph
@@ -225,161 +257,34 @@ class Dashboard extends React.Component<Props, State> {
                 </div>
               </CardFooter>
             </Card>
-          </GridItem>
+          </GridItem> */}
         </GridContainer>
         <GridContainer>
-          <GridItem xs={12} sm={12} md={6}>
-            <CustomTabs
-              title="Tasks:"
-              headerColor="primary"
-              tabs={[
-                {
-                  tabName: "Bugs",
-                  tabIcon: BugReport,
-                  tabContent: (
-                    <Tasks
-                      checkedIndexes={[0, 3]}
-                      tasksIndexes={[0, 1, 2, 3]}
-                      tasks={bugs}
-                    />
-                  ),
-                },
-                {
-                  tabName: "Website",
-                  tabIcon: Code,
-                  tabContent: (
-                    <Tasks
-                      checkedIndexes={[0]}
-                      tasksIndexes={[0, 1]}
-                      tasks={website}
-                    />
-                  ),
-                },
-                {
-                  tabName: "Server",
-                  tabIcon: Cloud,
-                  tabContent: (
-                    <Tasks
-                      checkedIndexes={[1]}
-                      tasksIndexes={[0, 1, 2]}
-                      tasks={server}
-                    />
-                  ),
-                },
-              ]}
-            />
-          </GridItem>
-          <GridItem xs={12} sm={12} md={6}>
+          <GridItem xs={12} sm={12} md={12}>
             <Card>
-              <CardHeader color="warning">
-                <h4 className={classes.cardTitleWhite}>Employees Stats</h4>
-                <p className={classes.cardCategoryWhite}>
-                  New employees on 15th September, 2016
-                </p>
+              <CardHeader color="primary">
+                <h4 className={classes.cardTitleWhite}>Dados de Covid 19 por estado</h4>
+                
               </CardHeader>
               <CardBody>
                 <Table
-                  tableHeaderColor="warning"
-                  tableHead={["ID", "Name", "Salary", "Country"]}
-                  tableData={[
-                    ["1", "Dakota Rice", "$36,738", "Niger"],
-                    ["2", "Minerva Hooper", "$23,789", "Curaçao"],
-                    ["3", "Sage Rodriguez", "$56,142", "Netherlands"],
-                    ["4", "Philip Chaney", "$38,735", "Korea, South"],
-                  ]}
+                  tableHeaderColor="danger"
+                  tableHead={["UF", "Estado", "Casos", "Mortes", "Suspeitas"]}
+                  tableData={this.state.data.map((item) => {
+                    return [
+                      item.uf,
+                      item.state,
+                      item.cases,
+                      item.deaths,
+                      item.suspects,
+                    ];
+                  })}
                 />
               </CardBody>
             </Card>
           </GridItem>
         </GridContainer>
-        <GridContainer>
-          <GridItem xs={12}>
-          <Card>
-              <CardHeader color="success">
-                <div className={classes.messages}>
-                  <h4 className={classes.cardTitleWhite}>Mensagens Positivas</h4>
-                  {!creatingMessage && (
-                    <Button 
-                      color="transparent" 
-                      variant="outlined" 
-                      onClick={() => this.setState({ creatingMessage: true })}
-                    >
-                      Enviar Mensagem
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardBody>
-                {!creatingMessage 
-                  ? <React.Fragment>
-                      <h5 className={classes.cardTitle}>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras ac est pulvinar, tempor turpis id, 
-                        vehicula magna.
-                      </h5>
-                      <p className={classes.cardCategory}>
-                        Jane Doe
-                      </p>
-                    </React.Fragment> 
-                  : <React.Fragment>
-                      <GridContainer>
-                        <GridItem xs={12}>
-                          <CustomInput
-                            labelText="Nome"
-                            id="name"
-                            color="success"
-                            formControlProps={{
-                              fullWidth: true
-                            }}
-                          />
-                        </GridItem>
-                      </GridContainer>
-                      <GridContainer>
-                        <GridItem xs={12}>
-                        <CustomInput
-                          labelText="Mensagem"
-                          id="message"
-                          formControlProps={{
-                            fullWidth: true
-                          }}
-                          inputProps={{
-                            multiline: true,
-                            rows: 5
-                          }}
-                        />
-                        </GridItem>
-                      </GridContainer>
-                    </React.Fragment>
-                }
-              </CardBody>
-              {creatingMessage && (
-                <CardFooter>
-                  <Button color="danger" onClick={() => this.setState({ creatingMessage: false })} >Cancelar</Button>
-                  <Button color="success">Enviar Mensagem</Button>
-                </CardFooter>
-              )}
-              {messageFailed && (
-                <CardFooter>
-                  <div className={classes.stats}>
-                    <Danger>
-                      <Warning />
-                      Falha ao enviar mensagem
-                    </Danger>
-                  </div>
-                </CardFooter>
-              )}
-              {messageSuccess && (
-                <CardFooter>
-                  <div className={classes.stats}>
-                    <Success>
-                      <CheckIcon />
-                      Mensagem enviada com sucesso
-                    </Success>
-                  </div>
-                </CardFooter>
-              )}
-            </Card>
-          </GridItem>
-        </GridContainer>
+       
       </div>
     );
   }
