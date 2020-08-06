@@ -13,22 +13,22 @@ interface Props {
   value?: string | number;
 }
 
-class CardDash extends React.Component<Props, {}> {
-  render() {
-    const { classes, icon, type, title, subtitle, value } = this.props;
+const CardDash:React.FC <Props> = (props)=> {
     return (
-      <Card>
-        <CardHeader color={type} stats={true} icon={true}>
-          <CardIcon color={type}>{icon}</CardIcon>
-          <p className={classes.cardCategory}>{title}</p>
-          <h3 className={classes.cardTitle}>{value}</h3>
+        <Card>
+        <CardHeader color={props.type} stats={true} icon={true}>
+          <CardIcon color={props.type}>{props.icon}</CardIcon>
+          <p className={props.classes.cardCategory}>{props.title}</p>
+          <h3 className={props.classes.cardTitle}>{props.value}</h3>
         </CardHeader>
         <CardFooter stats={true}>
-          <div className={classes.stats}>{subtitle}</div>
+          <div className={props.classes.stats}>{props.subtitle}</div>
         </CardFooter>
       </Card>
-    );
-  }
+
+    )
 }
+
+
 
 export default CardDash;
